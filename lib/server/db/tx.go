@@ -13,8 +13,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//go:generate counterfeiter -o mocks/fabricCATX.go -fake-name FabricCATx . FabricCATx
-
 // FabricCATx is the interface with functions implemented by sqlx.Tx
 // object that are used by Fabric CA server
 type FabricCATx interface {
@@ -26,8 +24,6 @@ type FabricCATx interface {
 	Commit(funcName string) error
 	Rollback(funcName string) error
 }
-
-//go:generate counterfeiter -o mocks/sqlxTx.go -fake-name SqlxTx . SqlxTx
 
 // SqlxTx is the contract with sqlx
 type SqlxTx interface {

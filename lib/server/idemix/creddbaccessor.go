@@ -63,8 +63,6 @@ type CredRecord struct {
 	Level            int       `db:"level"`
 }
 
-//go:generate mockery -name CredDBAccessor -case underscore
-
 // CredDBAccessor is the accessor for credentials database table
 type CredDBAccessor interface {
 	// Sets reference to datastore object

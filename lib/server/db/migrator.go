@@ -11,8 +11,6 @@ import (
 	"github.com/hyperledger/fabric-ca/lib/server/db/util"
 )
 
-//go:generate counterfeiter -o mocks/migrator.go -fake-name Migrator . Migrator
-
 // Migrator is the interface that defines a migrator
 type Migrator interface {
 	MigrateUsersTable() error

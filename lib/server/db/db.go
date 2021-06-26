@@ -16,9 +16,6 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//go:generate counterfeiter -o mocks/fabricCaDb.go -fake-name FabricCADB . FabricCADB
-//go:generate mockery -name FabricCADB -output ../idemix/mocks -case underscore
-
 // FabricCADB is the interface that wrapper off SqlxDB
 type FabricCADB interface {
 	IsInitialized() bool
@@ -39,8 +36,6 @@ type FabricCADB interface {
 	SetMaxOpenConns(n int)
 	PingContext(ctx context.Context) error
 }
-
-//go:generate counterfeiter -o mocks/sqlxDB.go -fake-name SqlxDB . SqlxDB
 
 // SqlxDB is the interface with functions implemented by sqlx.DB
 // object that are used by Fabric CA server
