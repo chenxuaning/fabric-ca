@@ -36,7 +36,7 @@ export GO_LDFLAGS
 IMAGES = $(PROJECT_NAME)
 FVTIMAGE = $(PROJECT_NAME)-fvt
 
-RELEASE_PLATFORMS = linux-amd64 darwin-amd64 windows-amd64
+RELEASE_PLATFORMS = linux-amd64 darwin-amd64
 RELEASE_PKGS = fabric-ca-client fabric-ca-server
 
 TOOLS = build/tools
@@ -88,9 +88,6 @@ native: fabric-ca-client fabric-ca-server
 release: $(patsubst %,release/%, $(MARCH))
 release-all: $(patsubst %,release/%, $(RELEASE_PLATFORMS))
 
-release/windows-amd64: GOOS=windows
-release/windows-amd64: CC=/usr/bin/x86_64-w64-mingw32-gcc
-release/windows-amd64: $(patsubst %,release/windows-amd64/bin/%, $(RELEASE_PKGS))
 
 release/darwin-amd64: GOOS=darwin
 release/darwin-amd64: CC=/usr/bin/clang
@@ -119,8 +116,6 @@ release/%/bin/fabric-ca-server: $(GO_SOURCE)
 dist: dist-clean release
 	cd release/$(MARCH) && tar -czvf hyperledger-fabric-ca-$(MARCH)-$(PROJECT_VERSION).tar.gz *
 dist-all: dist-clean release-all $(patsubst %,dist/%, $(RELEASE_PLATFORMS))
-dist/windows-amd64:
-	cd release/windows-amd64 && tar -czvf hyperledger-fabric-ca-windows-amd64-$(PROJECT_VERSION).tar.gz *
 dist/darwin-amd64:
 	cd release/darwin-amd64 && tar -czvf hyperledger-fabric-ca-darwin-amd64-$(PROJECT_VERSION).tar.gz *
 dist/linux-amd64:
@@ -140,7 +135,6 @@ release-clean: $(patsubst %,%-release-clean, $(RELEASE_PLATFORMS))
 
 .PHONY: dist-clean
 dist-clean:
-	-@rm -rf release/windows-amd64/hyperledger-fabric-ca-windows-amd64-$(PROJECT_VERSION).tar.gz ||:
 	-@rm -rf release/darwin-amd64/hyperledger-fabric-ca-darwin-amd64-$(PROJECT_VERSION).tar.gz ||:
 	-@rm -rf release/linux-amd64/hyperledger-fabric-ca-linux-amd64-$(PROJECT_VERSION).tar.gz ||:
 

@@ -39,8 +39,6 @@ type Issuer interface {
 	VerifyToken(authHdr, method, uri string, body []byte) (string, error)
 }
 
-//go:generate mockery -name MyIssuer -case underscore
-
 // MyIssuer provides functions for accessing issuer components
 type MyIssuer interface {
 	Name() string
@@ -54,8 +52,6 @@ type MyIssuer interface {
 	NonceManager() NonceManager
 	CredDBAccessor() CredDBAccessor
 }
-
-//go:generate mockery -name ServerRequestCtx -case underscore
 
 // ServerRequestCtx is the server request context that Idemix enroll expects
 type ServerRequestCtx interface {

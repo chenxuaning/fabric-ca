@@ -102,8 +102,6 @@ type Info struct {
 	IncorrectPasswordAttempts int
 }
 
-//go:generate counterfeiter -o mocks/userDB.go -fake-name UserDB . userDB
-
 type userDB interface {
 	Exec(funcName, query string, args ...interface{}) (sql.Result, error)
 	Get(funcName string, dest interface{}, query string, args ...interface{}) error

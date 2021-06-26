@@ -17,8 +17,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-//go:generate counterfeiter -o mocks/create.go -fake-name Create . Create
-
 // Create is interface that defines functions need to create database transaction
 type Create interface {
 	Exec(funcName, query string, args ...interface{}) (sql.Result, error)
