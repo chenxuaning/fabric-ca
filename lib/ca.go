@@ -554,6 +554,7 @@ func (ca *CA) initDB(metrics *db.Metrics) error {
 	}
 
 	dbCfg := &ca.Config.DB
+	dbError := false
 	var err error
 
 	if dbCfg.Type == "" || dbCfg.Type == defaultDatabaseType {
@@ -629,6 +630,25 @@ func (ca *CA) initDB(metrics *db.Metrics) error {
 	err = db.Migrate(migrator, curLevels, ca.server.levels)
 	if err != nil {
 		return errors.Wrap(err, "Failed to migrate database")
+	}
+
+	err = ca.loadUsersTable()
+	if err != nil {
+		log.Error(err)
+		dbError = true
+		if caerrors.IsFatalError(err) {
+			return err
+		}
+	}
+
+	err = ca.loadAffiliationsTable()
+	if err != nil {
+		log.Error(err)
+		dbError = true
+	}
+
+	if dbError {
+		return errors.Errorf("Failed to initialize %s database at %s ", dbCfg.Type, ds)
 	}
 
 	ca.db.SetDBInitialized(true)

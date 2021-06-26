@@ -31,7 +31,6 @@ import (
 	gmux "github.com/gorilla/mux"
 	calog "github.com/hyperledger/fabric-ca/internal/pkg/log"
 	"github.com/hyperledger/fabric-ca/internal/pkg/util"
-	"github.com/hyperledger/fabric-ca/lib/attr"
 	"github.com/hyperledger/fabric-ca/lib/caerrors"
 	"github.com/hyperledger/fabric-ca/lib/metadata"
 	"github.com/hyperledger/fabric-ca/lib/server/db"
@@ -263,39 +262,6 @@ func (s *Server) Stop() error {
 		log.Errorf("Close DB failed: %s", err)
 	}
 
-	return nil
-}
-
-// RegisterBootstrapUser registers the bootstrap user with appropriate privileges
-func (s *Server) RegisterBootstrapUser(user, pass, affiliation string) error {
-	// Initialize the config, setting defaults, etc
-	log.Debugf("Register bootstrap user: name=%s, affiliation=%s", user, affiliation)
-
-	if user == "" || pass == "" {
-		return errors.New("Empty identity name and/or pass not allowed")
-	}
-
-	id := CAConfigIdentity{
-		Name:           user,
-		Pass:           pass,
-		Type:           "client",
-		Affiliation:    affiliation,
-		MaxEnrollments: 0, // 0 means to use the server's max enrollment setting
-		Attrs: map[string]string{
-			attr.Roles:          "*",
-			attr.DelegateRoles:  "*",
-			attr.Revoker:        "true",
-			attr.IntermediateCA: "true",
-			attr.GenCRL:         "true",
-			attr.RegistrarAttr:  "*",
-			attr.AffiliationMgr: "true",
-		},
-	}
-
-	registry := &s.CA.Config.Registry
-	registry.Identities = append(registry.Identities, id)
-
-	log.Debugf("Registered bootstrap identity: %+v", id)
 	return nil
 }
 
