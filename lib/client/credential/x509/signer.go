@@ -7,9 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 package x509
 
 import (
-	"crypto/x509"
 	"fmt"
 
+	"github.com/anotheros/cryptogm/x509"
 	"github.com/hyperledger/fabric-ca/internal/pkg/util"
 	"github.com/hyperledger/fabric-ca/lib/attrmgr"
 	"github.com/hyperledger/fabric/bccsp"

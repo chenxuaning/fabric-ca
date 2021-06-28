@@ -329,37 +329,6 @@ bccsp:
             keystore: msp/keystore
 
 #############################################################################
-# Multi CA section
-#
-# Each Fabric CA server contains one CA by default.  This section is used
-# to configure multiple CAs in a single server.
-#
-# 1) --cacount <number-of-CAs>
-# Automatically generate <number-of-CAs> non-default CAs.  The names of these
-# additional CAs are "ca1", "ca2", ... "caN", where "N" is <number-of-CAs>
-# This is particularly useful in a development environment to quickly set up
-# multiple CAs. Note that, this config option is not applicable to intermediate CA server
-# i.e., Fabric CA server that is started with intermediate.parentserver.url config
-# option (-u command line option)
-#
-# 2) --cafiles <CA-config-files>
-# For each CA config file in the list, generate a separate signing CA.  Each CA
-# config file in this list MAY contain all of the same elements as are found in
-# the server config file except port, debug, and tls sections.
-#
-# Examples:
-# fabric-ca-server start -b admin:adminpw --cacount 2
-#
-# fabric-ca-server start -b admin:adminpw --cafiles ca/ca1/fabric-ca-server-config.yaml
-# --cafiles ca/ca2/fabric-ca-server-config.yaml
-#
-#############################################################################
-
-cacount:
-
-cafiles:
-
-#############################################################################
 # Intermediate CA section
 #
 # The relationship between servers and CAs is as follows:

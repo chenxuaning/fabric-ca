@@ -85,7 +85,7 @@ func registerUser(req *api.RegistrationRequest, registrar string, ca *CA, ctx Se
 
 	secret, err := registerUserID(req, ca)
 	if err != nil {
-		return "", errors.WithMessagef(err, "Registration of '%s' failed", req.Name)
+		return "", errors.Wrapf(err, "Registration of '%s' failed", req.Name)
 	}
 	// Set the location header to the URI of the identity that was created by the registration request
 	ctx.GetResp().Header().Set("Location", fmt.Sprintf("%sidentities/%s", apiPathPrefix, url.PathEscape(req.Name)))
@@ -183,7 +183,7 @@ func canRegister(registrar user.User, req *api.RegistrationRequest, ca *CA, ctx 
 	// Check that the affiliation requested is of the appropriate level
 	err = validateAffiliation(req, ca, ctx)
 	if err != nil {
-		return errors.WithMessagef(err, "Registration of '%s' failed in affiliation validation", req.Name)
+		return errors.Wrapf(err, "Registration of '%s' failed in affiliation validation", req.Name)
 	}
 
 	err = attr.CanRegisterRequestedAttributes(req.Attributes, nil, registrar)

@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/cloudflare/cfssl/log"
-	proto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-amcl/amcl"
 	fp256bn "github.com/hyperledger/fabric-amcl/amcl/FP256BN"
 	"github.com/hyperledger/fabric-ca/internal/pkg/api"
@@ -297,7 +297,7 @@ func (i *issuer) CredDBAccessor() CredDBAccessor {
 }
 
 func (i *issuer) initKeyMaterial(renew bool) error {
-	//log.Debug("Initialize Idemix issuer key material")
+	// log.Debug("Initialize Idemix issuer key material")
 
 	rng, err := i.idemixLib.GetRand()
 	if err != nil {
@@ -329,7 +329,7 @@ func (i *issuer) initKeyMaterial(renew bool) error {
 	if err != nil {
 		return err
 	}
-	//log.Infof("Idemix issuer public and secret keys were generated for CA '%s'", i.name)
+	// log.Infof("Idemix issuer public and secret keys were generated for CA '%s'", i.name)
 	issuerCred.SetIssuerKey(ik)
 	err = issuerCred.Store()
 	if err != nil {

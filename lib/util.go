@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 
+	gmx509 "github.com/anotheros/cryptogm/x509"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/grantae/certinfo"
 	"github.com/hyperledger/fabric-ca/internal/pkg/api"
@@ -34,12 +35,12 @@ var clientAuthTypes = map[string]tls.ClientAuthType{
 }
 
 // BytesToX509Cert converts bytes (PEM or DER) to an X509 certificate
-func BytesToX509Cert(bytes []byte) (*x509.Certificate, error) {
+func BytesToX509Cert(bytes []byte) (*gmx509.Certificate, error) {
 	dcert, _ := pem.Decode(bytes)
 	if dcert != nil {
 		bytes = dcert.Bytes
 	}
-	cert, err := x509.ParseCertificate(bytes)
+	cert, err := gmx509.ParseCertificate(bytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "Buffer was neither PEM nor DER encoding")
 	}
@@ -170,7 +171,7 @@ func (cd *CertificateDecoder) CertificateDecoder(decoder *json.Decoder) error {
 	if block == nil || len(rest) > 0 {
 		return errors.New("Certificate decoding error")
 	}
-	certificate, err := x509.ParseCertificate(block.Bytes)
+	certificate, err := gmx509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return err
 	}

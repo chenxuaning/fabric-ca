@@ -29,6 +29,7 @@ import (
 	"strings"
 	"time"
 
+	gmx509 "github.com/anotheros/cryptogm/x509"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/hyperledger/fabric/bccsp"
 	"github.com/pkg/errors"
@@ -194,7 +195,7 @@ func genECDSAToken(csp bccsp.BCCSP, key bccsp.Key, b64cert, payload string) (str
 // returns the associated user ID
 //
 // TODO(mjs): Move to consumer (lib/serverRequestContextImpl#verifyX509Token)
-func VerifyToken(csp bccsp.BCCSP, token string, method, uri string, body []byte, compMode1_3 bool) (*x509.Certificate, error) {
+func VerifyToken(csp bccsp.BCCSP, token string, method, uri string, body []byte, compMode1_3 bool) (*gmx509.Certificate, error) {
 	if csp == nil {
 		return nil, errors.New("BCCSP instance is not present")
 	}
@@ -247,7 +248,7 @@ func VerifyToken(csp bccsp.BCCSP, token string, method, uri string, body []byte,
 }
 
 // decodeToken extracts an X509 certificate and base64 encoded signature from a token
-func decodeToken(token string) (*x509.Certificate, string, string, error) {
+func decodeToken(token string) (*gmx509.Certificate, string, string, error) {
 	if token == "" {
 		return nil, "", "", errors.New("Invalid token; it is empty")
 	}
@@ -390,7 +391,7 @@ func GetDefaultConfigFile(cmdName string) string {
 }
 
 // GetX509CertificateFromPEMFile gets an X509 certificate from a file
-func GetX509CertificateFromPEMFile(file string) (*x509.Certificate, error) {
+func GetX509CertificateFromPEMFile(file string) (*gmx509.Certificate, error) {
 	pemBytes, err := ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -403,51 +404,16 @@ func GetX509CertificateFromPEMFile(file string) (*x509.Certificate, error) {
 }
 
 // GetX509CertificateFromPEM get an X509 certificate from bytes in PEM format
-func GetX509CertificateFromPEM(cert []byte) (*x509.Certificate, error) {
+func GetX509CertificateFromPEM(cert []byte) (*gmx509.Certificate, error) {
 	block, _ := pem.Decode(cert)
 	if block == nil {
 		return nil, errors.New("Failed to PEM decode certificate")
 	}
-	x509Cert, err := x509.ParseCertificate(block.Bytes)
+	x509Cert, err := gmx509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error parsing certificate")
 	}
 	return x509Cert, nil
-}
-
-// GetX509CertificatesFromPEM returns X509 certificates from bytes in PEM format
-func GetX509CertificatesFromPEM(pemBytes []byte) ([]*x509.Certificate, error) {
-	chain := pemBytes
-	var certs []*x509.Certificate
-	for len(chain) > 0 {
-		var block *pem.Block
-		block, chain = pem.Decode(chain)
-		if block == nil {
-			break
-		}
-
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, errors.Wrap(err, "Error parsing certificate")
-		}
-		certs = append(certs, cert)
-	}
-	return certs, nil
-}
-
-// GetCertificateDurationFromFile returns the validity duration for a certificate
-// in a file.
-func GetCertificateDurationFromFile(file string) (time.Duration, error) {
-	cert, err := GetX509CertificateFromPEMFile(file)
-	if err != nil {
-		return 0, err
-	}
-	return GetCertificateDuration(cert), nil
-}
-
-// GetCertificateDuration returns the validity duration for a certificate
-func GetCertificateDuration(cert *x509.Certificate) time.Duration {
-	return cert.NotAfter.Sub(cert.NotBefore)
 }
 
 // GetEnrollmentIDFromPEM returns the EnrollmentID from a PEM buffer
@@ -460,7 +426,7 @@ func GetEnrollmentIDFromPEM(cert []byte) (string, error) {
 }
 
 // GetEnrollmentIDFromX509Certificate returns the EnrollmentID from the X509 certificate
-func GetEnrollmentIDFromX509Certificate(cert *x509.Certificate) string {
+func GetEnrollmentIDFromX509Certificate(cert *gmx509.Certificate) string {
 	return cert.Subject.CommonName
 }
 

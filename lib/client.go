@@ -25,7 +25,7 @@ import (
 	cfsslapi "github.com/cloudflare/cfssl/api"
 	"github.com/cloudflare/cfssl/csr"
 	"github.com/cloudflare/cfssl/log"
-	proto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	fp256bn "github.com/hyperledger/fabric-amcl/amcl/FP256BN"
 	"github.com/hyperledger/fabric-ca/internal/pkg/api"
 	"github.com/hyperledger/fabric-ca/internal/pkg/util"
@@ -657,7 +657,7 @@ func (c *Client) NewIdentity(creds []credential.Credential) (*Identity, error) {
 		return NewIdentity(c, name, creds), nil
 	}
 
-	//TODO: Get the enrollment ID from the creds...they all should return same value
+	// TODO: Get the enrollment ID from the creds...they all should return same value
 	// for i := 1; i < len(creds); i++ {
 	// 	localid, err := creds[i].EnrollmentID()
 	// 	if err != nil {
@@ -951,8 +951,8 @@ func (c *Client) verifyIdemixCredential() error {
 	return nil
 }
 
-func newCfsslKeyRequest(bkr *api.KeyRequest) *csr.KeyRequest {
-	return &csr.KeyRequest{A: bkr.Algo, S: bkr.Size}
+func newCfsslKeyRequest(bkr *api.KeyRequest) csr.KeyRequest {
+	return &csr.BasicKeyRequest{A: bkr.Algo, S: bkr.Size}
 }
 
 // NormalizeURL normalizes a URL (from cfssl)

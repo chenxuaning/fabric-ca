@@ -340,7 +340,7 @@ func processPostRequest(ctx *serverRequestContextImpl, caname string) (*api.Iden
 
 	pass, err := registerUser(addReq, callerID, ctx.ca, ctx)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "Failed to add identity '%s'", req.ID)
+		return nil, errors.Wrapf(err, "Failed to add identity '%s'", req.ID)
 	}
 
 	user, err := ctx.ca.registry.GetUser(req.ID, nil)

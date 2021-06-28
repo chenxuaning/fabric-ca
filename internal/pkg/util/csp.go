@@ -11,7 +11,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -19,6 +18,7 @@ import (
 	"strings"
 	_ "time" // for ocspSignerFromConfig
 
+	"github.com/anotheros/cryptogm/x509"
 	_ "github.com/cloudflare/cfssl/cli" // for ocspSignerFromConfig
 	"github.com/cloudflare/cfssl/config"
 	"github.com/cloudflare/cfssl/csr"
@@ -105,7 +105,7 @@ func BccspBackedSigner(caFile, keyFile string, policy *config.Signing, csp bccsp
 
 // getBCCSPKeyOpts generates a key as specified in the request.
 // This supports ECDSA and RSA.
-func getBCCSPKeyOpts(kr *csr.KeyRequest, ephemeral bool) (opts bccsp.KeyGenOpts, err error) {
+func getBCCSPKeyOpts(kr csr.KeyRequest, ephemeral bool) (opts bccsp.KeyGenOpts, err error) {
 	if kr == nil {
 		return &bccsp.ECDSAKeyGenOpts{Temporary: ephemeral}, nil
 	}
@@ -133,6 +133,13 @@ func getBCCSPKeyOpts(kr *csr.KeyRequest, ephemeral bool) (opts bccsp.KeyGenOpts,
 			// Need to add curve P521 to bccsp
 			// return &bccsp.ECDSAP512KeyGenOpts{Temporary: false}, nil
 			return nil, errors.New("Unsupported ECDSA key size: 521")
+		default:
+			return nil, errors.Errorf("Invalid ECDSA key size: %d", kr.Size())
+		}
+	case "sm2":
+		switch kr.Size() {
+		case 256:
+			return &bccsp.SM2KeyGenOpts{Temporary: ephemeral}, nil
 		default:
 			return nil, errors.Errorf("Invalid ECDSA key size: %d", kr.Size())
 		}

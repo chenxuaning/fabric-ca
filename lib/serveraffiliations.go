@@ -169,7 +169,7 @@ func getAffiliations(ctx *serverRequestContextImpl, caller user.User, caname str
 	callerAff := cadbuser.GetAffiliation(caller)
 	rows, err := registry.GetAllAffiliations(callerAff)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "Failed to get all affiliations")
+		return nil, errors.Wrapf(err, "Failed to get all affiliations")
 	}
 
 	an := &affiliationNode{}

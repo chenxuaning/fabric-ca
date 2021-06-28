@@ -11,7 +11,6 @@ import (
 	"crypto/dsa"
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/anotheros/cryptogm/x509"
 	"github.com/cloudflare/cfssl/certdb"
 	"github.com/cloudflare/cfssl/config"
 	cfcsr "github.com/cloudflare/cfssl/csr"
@@ -337,7 +337,7 @@ func (ca *CA) getCACert() (cert []byte, err error) {
 			CN:           csr.CN,
 			Names:        csr.Names,
 			Hosts:        csr.Hosts,
-			KeyRequest:   &cfcsr.KeyRequest{A: csr.KeyRequest.Algo, S: csr.KeyRequest.Size},
+			KeyRequest:   &cfcsr.BasicKeyRequest{A: csr.KeyRequest.Algo, S: csr.KeyRequest.Size},
 			CA:           csr.CA,
 			SerialNumber: csr.SerialNumber,
 		}
