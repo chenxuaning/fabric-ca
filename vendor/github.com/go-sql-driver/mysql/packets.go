@@ -115,7 +115,7 @@ func (mc *mysqlConn) writePacket(data []byte) error {
 		if mc.cfg.ReadTimeout != 0 {
 			err = conn.SetReadDeadline(time.Time{})
 		}
-		if err == nil && mc.cfg.CheckConnLiveness {
+		if err == nil {
 			err = connCheck(conn)
 		}
 		if err != nil {
@@ -591,7 +591,7 @@ func (mc *mysqlConn) handleErrorPacket(data []byte) error {
 
 	// SQL State [optional: # + 5bytes string]
 	if data[3] == 0x23 {
-		//sqlstate := string(data[4 : 4+5])
+		// sqlstate := string(data[4 : 4+5])
 		pos = 9
 	}
 
@@ -721,12 +721,12 @@ func (mc *mysqlConn) readColumns(count int) ([]mysqlField, error) {
 
 		// Decimals [uint8]
 		columns[i].decimals = data[pos]
-		//pos++
+		// pos++
 
 		// Default value [len coded binary]
-		//if pos < len(data) {
+		// if pos < len(data) {
 		//	defaultVal, _, err = bytesToLengthCodedBinary(data[pos:])
-		//}
+		// }
 	}
 }
 

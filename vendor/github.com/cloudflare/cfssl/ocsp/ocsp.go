@@ -10,8 +10,8 @@ package ocsp
 import (
 	"bytes"
 	"crypto"
-	"crypto/x509"
 	"crypto/x509/pkix"
+	"github.com/anotheros/cryptogm/x509"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -135,7 +135,7 @@ func NewSignerFromFile(issuerFile, responderFile, keyFile string, interval time.
 
 	key, err := helpers.ParsePrivateKeyPEM(keyBytes)
 	if err != nil {
-		log.Debugf("Malformed private key %v", err)
+		log.Debug("Malformed private key %v", err)
 		return nil, err
 	}
 
@@ -164,10 +164,8 @@ func (s StandardSigner) Sign(req SignRequest) ([]byte, error) {
 	if bytes.Compare(req.Certificate.RawIssuer, s.issuer.RawSubject) != 0 {
 		return nil, cferr.New(cferr.OCSPError, cferr.IssuerMismatch)
 	}
-
-	err := req.Certificate.CheckSignatureFrom(s.issuer)
-	if err != nil {
-		return nil, cferr.Wrap(cferr.OCSPError, cferr.VerifyFailed, err)
+	if req.Certificate.CheckSignatureFrom(s.issuer) != nil {
+		return nil, cferr.New(cferr.OCSPError, cferr.IssuerMismatch)
 	}
 
 	var thisUpdate, nextUpdate time.Time

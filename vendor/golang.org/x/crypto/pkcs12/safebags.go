@@ -5,7 +5,7 @@
 package pkcs12
 
 import (
-	"crypto/x509"
+	"github.com/anotheros/cryptogm/x509"
 	"encoding/asn1"
 	"errors"
 )

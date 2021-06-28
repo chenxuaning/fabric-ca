@@ -17,10 +17,10 @@ package pkcs11
 
 import (
 	"crypto/ecdsa"
-	"crypto/x509"
 	"errors"
 	"fmt"
 
+	"github.com/anotheros/cryptogm/x509"
 	"github.com/hyperledger/fabric/bccsp"
 )
 

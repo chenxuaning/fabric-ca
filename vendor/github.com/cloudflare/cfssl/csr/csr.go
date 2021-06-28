@@ -7,14 +7,14 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"encoding/pem"
 	"errors"
+	"github.com/anotheros/cryptogm/sm2"
+	"github.com/anotheros/cryptogm/x509"
 	"net"
 	"net/mail"
-	"net/url"
 	"strings"
 
 	cferr "github.com/cloudflare/cfssl/errors"
@@ -30,40 +30,50 @@ const (
 
 // A Name contains the SubjectInfo fields.
 type Name struct {
-	C            string `json:"C,omitempty" yaml:"C,omitempty"`   // Country
-	ST           string `json:"ST,omitempty" yaml:"ST,omitempty"` // State
-	L            string `json:"L,omitempty" yaml:"L,omitempty"`   // Locality
-	O            string `json:"O,omitempty" yaml:"O,omitempty"`   // OrganisationName
-	OU           string `json:"OU,omitempty" yaml:"OU,omitempty"` // OrganisationalUnitName
-	SerialNumber string `json:"SerialNumber,omitempty" yaml:"SerialNumber,omitempty"`
+	C            string // Country
+	ST           string // State
+	L            string // Locality
+	O            string // OrganisationName
+	OU           string // OrganisationalUnitName
+	SerialNumber string
 }
 
-// A KeyRequest contains the algorithm and key size for a new private key.
-type KeyRequest struct {
+// A KeyRequest is a generic request for a new key.
+type KeyRequest interface {
+	Algo() string
+	Size() int
+	Generate() (crypto.PrivateKey, error)
+	SigAlgo() x509.SignatureAlgorithm
+}
+
+// A BasicKeyRequest contains the algorithm and key size for a new private key.
+type BasicKeyRequest struct {
 	A string `json:"algo" yaml:"algo"`
 	S int    `json:"size" yaml:"size"`
 }
 
-// NewKeyRequest returns a default KeyRequest.
-func NewKeyRequest() *KeyRequest {
-	return &KeyRequest{"ecdsa", curveP256}
+// NewBasicKeyRequest returns a default BasicKeyRequest.
+func NewBasicKeyRequest() *BasicKeyRequest {
+	return &BasicKeyRequest{"ecdsa", curveP256}
 }
 
 // Algo returns the requested key algorithm represented as a string.
-func (kr *KeyRequest) Algo() string {
+func (kr *BasicKeyRequest) Algo() string {
 	return kr.A
 }
 
 // Size returns the requested key size.
-func (kr *KeyRequest) Size() int {
+func (kr *BasicKeyRequest) Size() int {
 	return kr.S
 }
 
 // Generate generates a key as specified in the request. Currently,
 // only ECDSA and RSA are supported.
-func (kr *KeyRequest) Generate() (crypto.PrivateKey, error) {
+func (kr *BasicKeyRequest) Generate() (crypto.PrivateKey, error) {
 	log.Debugf("generate key from request: algo=%s, size=%d", kr.Algo(), kr.Size())
 	switch kr.Algo() {
+	case "sm2":
+		return sm2.GenerateKey(rand.Reader)
 	case "rsa":
 		if kr.Size() < 2048 {
 			return nil, errors.New("RSA key is too weak")
@@ -92,7 +102,7 @@ func (kr *KeyRequest) Generate() (crypto.PrivateKey, error) {
 
 // SigAlgo returns an appropriate X.509 signature algorithm given the
 // key request's type and size.
-func (kr *KeyRequest) SigAlgo() x509.SignatureAlgorithm {
+func (kr *BasicKeyRequest) SigAlgo() x509.SignatureAlgorithm {
 	switch kr.Algo() {
 	case "rsa":
 		switch {
@@ -116,6 +126,8 @@ func (kr *KeyRequest) SigAlgo() x509.SignatureAlgorithm {
 		default:
 			return x509.ECDSAWithSHA1
 		}
+	case "sm2":
+		return x509.SM2WithSM3
 	default:
 		return x509.UnknownSignatureAlgorithm
 	}
@@ -126,25 +138,24 @@ type CAConfig struct {
 	PathLength  int    `json:"pathlen" yaml:"pathlen"`
 	PathLenZero bool   `json:"pathlenzero" yaml:"pathlenzero"`
 	Expiry      string `json:"expiry" yaml:"expiry"`
-	Backdate    string `json:"backdate" yaml:"backdate"`
 }
 
 // A CertificateRequest encapsulates the API interface to the
 // certificate request functionality.
 type CertificateRequest struct {
-	CN           string     `json:"CN" yaml:"CN"`
+	CN           string
 	Names        []Name     `json:"names" yaml:"names"`
 	Hosts        []string   `json:"hosts" yaml:"hosts"`
-	KeyRequest   *KeyRequest `json:"key,omitempty" yaml:"key,omitempty"`
+	KeyRequest   KeyRequest `json:"key,omitempty" yaml:"key,omitempty"`
 	CA           *CAConfig  `json:"ca,omitempty" yaml:"ca,omitempty"`
 	SerialNumber string     `json:"serialnumber,omitempty" yaml:"serialnumber,omitempty"`
 }
 
 // New returns a new, empty CertificateRequest with a
-// KeyRequest.
+// BasicKeyRequest.
 func New() *CertificateRequest {
 	return &CertificateRequest{
-		KeyRequest: NewKeyRequest(),
+		KeyRequest: NewBasicKeyRequest(),
 	}
 }
 
@@ -186,7 +197,7 @@ type BasicConstraints struct {
 func ParseRequest(req *CertificateRequest) (csr, key []byte, err error) {
 	log.Info("received CSR")
 	if req.KeyRequest == nil {
-		req.KeyRequest = NewKeyRequest()
+		req.KeyRequest = NewBasicKeyRequest()
 	}
 
 	log.Infof("generating key: %s-%d", req.KeyRequest.Algo(), req.KeyRequest.Size())
@@ -260,9 +271,6 @@ func getHosts(cert *x509.Certificate) []string {
 	}
 	for _, email := range cert.EmailAddresses {
 		hosts = append(hosts, email)
-	}
-	for _, uri := range cert.URIs {
-		hosts = append(hosts, uri.String())
 	}
 
 	return hosts
@@ -375,8 +383,6 @@ func Generate(priv crypto.Signer, req *CertificateRequest) (csr []byte, err erro
 			tpl.IPAddresses = append(tpl.IPAddresses, ip)
 		} else if email, err := mail.ParseAddress(req.Hosts[i]); err == nil && email != nil {
 			tpl.EmailAddresses = append(tpl.EmailAddresses, email.Address)
-		} else if uri, err := url.ParseRequestURI(req.Hosts[i]); err == nil && uri != nil {
-			tpl.URIs = append(tpl.URIs, uri)
 		} else {
 			tpl.DNSNames = append(tpl.DNSNames, req.Hosts[i])
 		}

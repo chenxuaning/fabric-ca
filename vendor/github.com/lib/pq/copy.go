@@ -13,7 +13,6 @@ var (
 	errBinaryCopyNotSupported     = errors.New("pq: only text format supported for COPY")
 	errCopyToNotSupported         = errors.New("pq: COPY TO is not supported")
 	errCopyNotSupportedOutsideTxn = errors.New("pq: COPY is only allowed inside a transaction")
-	errCopyInProgress             = errors.New("pq: COPY in progress")
 )
 
 // CopyIn creates a COPY FROM statement which can be prepared with
@@ -49,7 +48,6 @@ type copyin struct {
 	buffer  []byte
 	rowData chan []byte
 	done    chan bool
-	driver.Result
 
 	closed bool
 
@@ -98,13 +96,13 @@ awaitCopyInResponse:
 			err = parseError(r)
 		case 'Z':
 			if err == nil {
-				ci.setBad()
+				cn.bad = true
 				errorf("unexpected ReadyForQuery in response to COPY")
 			}
 			cn.processReadyForQuery(r)
 			return nil, err
 		default:
-			ci.setBad()
+			cn.bad = true
 			errorf("unknown response for copy query: %q", t)
 		}
 	}
@@ -123,7 +121,7 @@ awaitCopyInResponse:
 			cn.processReadyForQuery(r)
 			return nil, err
 		default:
-			ci.setBad()
+			cn.bad = true
 			errorf("unknown response for CopyFail: %q", t)
 		}
 	}
@@ -144,7 +142,7 @@ func (ci *copyin) resploop() {
 		var r readBuf
 		t, err := ci.cn.recvMessage(&r)
 		if err != nil {
-			ci.setBad()
+			ci.cn.bad = true
 			ci.setError(err)
 			ci.done <- true
 			return
@@ -152,12 +150,8 @@ func (ci *copyin) resploop() {
 		switch t {
 		case 'C':
 			// complete
-			res, _ := ci.cn.parseComplete(r.string())
-			ci.setResult(res)
 		case 'N':
-			if n := ci.cn.noticeHandler; n != nil {
-				n(parseError(&r))
-			}
+			// NoticeResponse
 		case 'Z':
 			ci.cn.processReadyForQuery(&r)
 			ci.done <- true
@@ -166,25 +160,12 @@ func (ci *copyin) resploop() {
 			err := parseError(&r)
 			ci.setError(err)
 		default:
-			ci.setBad()
+			ci.cn.bad = true
 			ci.setError(fmt.Errorf("unknown response during CopyIn: %q", t))
 			ci.done <- true
 			return
 		}
 	}
-}
-
-func (ci *copyin) setBad() {
-	ci.Lock()
-	ci.cn.bad = true
-	ci.Unlock()
-}
-
-func (ci *copyin) isBad() bool {
-	ci.Lock()
-	b := ci.cn.bad
-	ci.Unlock()
-	return b
 }
 
 func (ci *copyin) isErrorSet() bool {
@@ -202,22 +183,6 @@ func (ci *copyin) setError(err error) {
 		ci.err = err
 	}
 	ci.Unlock()
-}
-
-func (ci *copyin) setResult(result driver.Result) {
-	ci.Lock()
-	ci.Result = result
-	ci.Unlock()
-}
-
-func (ci *copyin) getResult() driver.Result {
-	ci.Lock()
-	result := ci.Result
-	if result == nil {
-		return driver.RowsAffected(0)
-	}
-	ci.Unlock()
-	return result
 }
 
 func (ci *copyin) NumInput() int {
@@ -240,7 +205,7 @@ func (ci *copyin) Exec(v []driver.Value) (r driver.Result, err error) {
 		return nil, errCopyInClosed
 	}
 
-	if ci.isBad() {
+	if ci.cn.bad {
 		return nil, driver.ErrBadConn
 	}
 	defer ci.cn.errRecover(&err)
@@ -250,11 +215,7 @@ func (ci *copyin) Exec(v []driver.Value) (r driver.Result, err error) {
 	}
 
 	if len(v) == 0 {
-		if err := ci.Close(); err != nil {
-			return driver.RowsAffected(0), err
-		}
-
-		return ci.getResult(), nil
+		return nil, ci.Close()
 	}
 
 	numValues := len(v)
@@ -282,7 +243,7 @@ func (ci *copyin) Close() (err error) {
 	}
 	ci.closed = true
 
-	if ci.isBad() {
+	if ci.cn.bad {
 		return driver.ErrBadConn
 	}
 	defer ci.cn.errRecover(&err)
@@ -297,7 +258,6 @@ func (ci *copyin) Close() (err error) {
 	}
 
 	<-ci.done
-	ci.cn.inCopy = false
 
 	if ci.isErrorSet() {
 		err = ci.err

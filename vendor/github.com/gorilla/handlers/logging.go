@@ -12,13 +12,11 @@ import (
 	"strconv"
 	"time"
 	"unicode/utf8"
-
-	"github.com/felixge/httpsnoop"
 )
 
 // Logging
 
-// LogFormatterParams is the structure any formatter will be handed when time to log comes
+// FormatterParams is the structure any formatter will be handed when time to log comes
 type LogFormatterParams struct {
 	Request    *http.Request
 	URL        url.URL
@@ -41,13 +39,10 @@ type loggingHandler struct {
 
 func (h loggingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	t := time.Now()
-	logger, w := makeLogger(w)
+	logger := makeLogger(w)
 	url := *req.URL
 
-	h.handler.ServeHTTP(w, req)
-	if req.MultipartForm != nil {
-		req.MultipartForm.RemoveAll()
-	}
+	h.handler.ServeHTTP(logger, req)
 
 	params := LogFormatterParams{
 		Request:    req,
@@ -60,16 +55,27 @@ func (h loggingHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.formatter(h.writer, params)
 }
 
-func makeLogger(w http.ResponseWriter) (*responseLogger, http.ResponseWriter) {
-	logger := &responseLogger{w: w, status: http.StatusOK}
-	return logger, httpsnoop.Wrap(w, httpsnoop.Hooks{
-		Write: func(httpsnoop.WriteFunc) httpsnoop.WriteFunc {
-			return logger.Write
-		},
-		WriteHeader: func(httpsnoop.WriteHeaderFunc) httpsnoop.WriteHeaderFunc {
-			return logger.WriteHeader
-		},
-	})
+func makeLogger(w http.ResponseWriter) loggingResponseWriter {
+	var logger loggingResponseWriter = &responseLogger{w: w, status: http.StatusOK}
+	if _, ok := w.(http.Hijacker); ok {
+		logger = &hijackLogger{responseLogger{w: w, status: http.StatusOK}}
+	}
+	h, ok1 := logger.(http.Hijacker)
+	c, ok2 := w.(http.CloseNotifier)
+	if ok1 && ok2 {
+		return hijackCloseNotifier{logger, h, c}
+	}
+	if ok2 {
+		return &closeNotifyWriter{logger, c}
+	}
+	return logger
+}
+
+type commonLoggingResponseWriter interface {
+	http.ResponseWriter
+	http.Flusher
+	Status() int
+	Size() int
 }
 
 const lowerhex = "0123456789abcdef"
@@ -136,6 +142,7 @@ func appendQuoted(buf []byte, s string) []byte {
 		}
 	}
 	return buf
+
 }
 
 // buildCommonLogLine builds a log entry for req in Apache Common Log Format.
@@ -150,6 +157,7 @@ func buildCommonLogLine(req *http.Request, url url.URL, ts time.Time, status int
 	}
 
 	host, _, err := net.SplitHostPort(req.RemoteAddr)
+
 	if err != nil {
 		host = req.RemoteAddr
 	}

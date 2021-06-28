@@ -86,7 +86,6 @@ func (p *Parser) objectList() (*ast.ObjectList, error) {
 			break
 		}
 	}
-
 	return node, nil
 }
 
@@ -147,7 +146,7 @@ func (p *Parser) objectKey() ([]*ast.ObjectKey, error) {
 			// Done
 			return keys, nil
 		case token.ILLEGAL:
-			return nil, errors.New("illegal")
+			fmt.Println("illegal")
 		default:
 			return nil, fmt.Errorf("expected: STRING got: %s", p.tok.Type)
 		}

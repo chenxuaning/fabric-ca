@@ -47,7 +47,7 @@
 package pkcs7
 
 import (
-	"crypto/x509"
+	"github.com/anotheros/cryptogm/x509"
 	"crypto/x509/pkix"
 	"encoding/asn1"
 	"errors"

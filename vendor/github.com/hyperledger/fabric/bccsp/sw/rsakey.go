@@ -18,7 +18,7 @@ package sw
 import (
 	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
+	"github.com/anotheros/cryptogm/x509"
 	"encoding/asn1"
 	"errors"
 	"fmt"

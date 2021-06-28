@@ -1,7 +1,6 @@
 gorilla/handlers
 ================
-[![GoDoc](https://godoc.org/github.com/gorilla/handlers?status.svg)](https://godoc.org/github.com/gorilla/handlers)
-[![CircleCI](https://circleci.com/gh/gorilla/handlers.svg?style=svg)](https://circleci.com/gh/gorilla/handlers)
+[![GoDoc](https://godoc.org/github.com/gorilla/handlers?status.svg)](https://godoc.org/github.com/gorilla/handlers) [![Build Status](https://travis-ci.org/gorilla/handlers.svg?branch=master)](https://travis-ci.org/gorilla/handlers)
 [![Sourcegraph](https://sourcegraph.com/github.com/gorilla/handlers/-/badge.svg)](https://sourcegraph.com/github.com/gorilla/handlers?badge)
 
 
@@ -26,7 +25,7 @@ with Go's `net/http` package (or any framework supporting `http.Handler`), inclu
 * [**RecoveryHandler**](https://godoc.org/github.com/gorilla/handlers#RecoveryHandler) for recovering from unexpected panics.
 
 Other handlers are documented [on the Gorilla
-website](https://www.gorillatoolkit.org/pkg/handlers).
+website](http://www.gorillatoolkit.org/pkg/handlers).
 
 ## Example
 

@@ -2,7 +2,7 @@
 package universal
 
 import (
-	"crypto/x509"
+	"github.com/anotheros/cryptogm/x509"
 	"net/http"
 
 	"github.com/cloudflare/cfssl/certdb"
@@ -11,7 +11,6 @@ import (
 	"github.com/cloudflare/cfssl/info"
 	"github.com/cloudflare/cfssl/signer"
 	"github.com/cloudflare/cfssl/signer/local"
-	"github.com/cloudflare/cfssl/signer/remote"
 )
 
 // Signer represents a universal signer which is both local and remote
@@ -63,10 +62,13 @@ func newLocalSigner(root Root, policy *config.Signing) (s signer.Signer, err err
 	// signers.
 	var shouldProvide bool
 
-	// localSignerList is a list of signers defined
-	// here or in the universal_signers*.go files.
-	// These activate and deactivate signers based
-	// on build flags.
+	// localSignerList is defined in the
+	// universal_signers*.go files. These activate
+	// and deactivate signers based on build
+	// flags; for example,
+	// universal_signers_pkcs11.go contains a list
+	// of valid signers when PKCS #11 is turned
+	// on.
 	for _, possibleSigner := range localSignerList {
 		s, shouldProvide, err = possibleSigner(&root, policy)
 		if shouldProvide {
@@ -81,24 +83,6 @@ func newLocalSigner(root Root, policy *config.Signing) (s signer.Signer, err err
 	return s, err
 }
 
-func newUniversalSigner(root Root, policy *config.Signing) (*Signer, error) {
-	ls, err := newLocalSigner(root, policy)
-	if err != nil {
-		return nil, err
-	}
-
-	rs, err := remote.NewSigner(policy)
-	if err != nil {
-		return nil, err
-	}
-
-	s := &Signer{
-		policy: policy,
-		local:  ls,
-		remote: rs,
-	}
-	return s, err
-}
 
 // NewSigner generates a new certificate signer from a Root structure.
 // This is one of two standard signers: local or remote. If the root
@@ -120,20 +104,9 @@ func NewSigner(root Root, policy *config.Signing) (signer.Signer, error) {
 
 	var s signer.Signer
 	var err error
-	if root.ForceRemote {
-		s, err = remote.NewSigner(policy)
-	} else {
-		if policy.NeedsLocalSigner() && policy.NeedsRemoteSigner() {
-			s, err = newUniversalSigner(root, policy)
-		} else {
-			if policy.NeedsLocalSigner() {
-				s, err = newLocalSigner(root, policy)
-			}
-			if policy.NeedsRemoteSigner() {
-				s, err = remote.NewSigner(policy)
-			}
-		}
-	}
+	
+	s, err = newLocalSigner(root, policy)
+
 
 	return s, err
 }

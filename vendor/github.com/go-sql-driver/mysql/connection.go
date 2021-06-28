@@ -154,9 +154,7 @@ func (mc *mysqlConn) Prepare(query string) (driver.Stmt, error) {
 	// Send command
 	err := mc.writeCommandPacketStr(comStmtPrepare, query)
 	if err != nil {
-		// STMT_PREPARE is safe to retry.  So we can return ErrBadConn here.
-		errLog.Print(err)
-		return nil, driver.ErrBadConn
+		return nil, mc.markBadConn(err)
 	}
 
 	stmt := &mysqlStmt{
