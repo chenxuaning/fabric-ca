@@ -29,8 +29,6 @@ type CertificateStatus string
 const (
 	// Revoked is the status of a revoked certificate
 	Revoked CertificateStatus = "revoked"
-	// Good is the status of a active certificate
-	Good = "good"
 )
 
 func newRevokeEndpoint(s *Server) *serverEndpoint {
