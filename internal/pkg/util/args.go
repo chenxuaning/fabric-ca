@@ -64,12 +64,3 @@ func getServerAddr() string {
 	}
 	return defaultServerAddr
 }
-
-// setDefaultServerPort overrides the default CFSSL server port
-// by adding the "-port" option to the command line if it was not
-// already present.
-func setDefaultServerPort() {
-	if len(os.Args) > 2 && getCommandLineOptValue("-port") == "" {
-		os.Args = append(os.Args, "-port", defaultServerPort)
-	}
-}
